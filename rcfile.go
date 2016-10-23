@@ -1,4 +1,6 @@
-package rcfile
+// Copyright 2016 Thijs van Dijk. All rights reserved.
+// Use of this source code is governed by the BSD 3-clause
+// license that can be found in the LICENSE file.
 
 /*
 	Package rcfile supplements command-line flags with configuration files.
@@ -36,6 +38,8 @@ package rcfile
 		1, 0, t, f, T, F, true, false, TRUE, FALSE, True, False
 	Duration flags accept any input valid for time.ParseDuration.
 */
+
+package rcfile
 
 import (
 	"bufio"

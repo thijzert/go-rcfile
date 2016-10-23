@@ -14,6 +14,13 @@ package rcfile
 	arguments into the defined flags. All switches in the configuration file
 	act as a second set of defaults for all defined flags.
 
+	User configuration files for an example program `foobaz` may be in the in the
+	following locations. Only the first file that exists is parsed.
+		~/.foobazrc
+		${XDG_CONFIG_DIR}/foobazrc
+		~/.config/foobazrc
+		%APPDATA%/foobazrc
+
 	Configuration file syntax:
 		# Lines starting with hashes are comments
 		; as are lines starting with a semicolon
@@ -88,16 +95,39 @@ func Parse() {
 }
 
 func openRCFile() io.ReadCloser {
-	var err error
-	if u, err := user.Current(); err == nil {
-		rcf := path.Join(u.HomeDir, "."+path.Base(os.Args[0])+"rc")
+	rc := path.Base(os.Args[0]) + "rc"
+
+	user, uexists := user.Current()
+	if uexists == nil {
+		rcf := path.Join(user.HomeDir, "."+rc)
 		r, err := os.Open(rcf)
-		if err != nil {
-			log.Print(err)
-		} else {
+		if err == nil {
 			return r
 		}
 	}
-	log.Print(err)
+
+	xdg_config := os.Getenv("XDG_CONFIG_DIR")
+	if xdg_config != "" {
+		r, err := os.Open(path.Join(xdg_config, rc))
+		if err == nil {
+			return r
+		}
+	}
+
+	if uexists == nil {
+		r, err := os.Open(path.Join(user.HomeDir, ".config", rc))
+		if err == nil {
+			return r
+		}
+	}
+
+	appdata := os.Getenv("APPDATA")
+	if appdata != "" {
+		r, err := os.Open(path.Join(appdata, rc))
+		if err == nil {
+			return r
+		}
+	}
+
 	return nil
 }

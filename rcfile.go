@@ -54,7 +54,11 @@ import (
 
 func Parse() {
 	rc := path.Base(os.Args[0]) + "rc"
-	f, filename := openFile(rc)
+	ParseInto(flag.CommandLine, rc)
+}
+
+func ParseInto(flagSet *flag.FlagSet, baseName string) {
+	f, filename := openFile(baseName)
 	if f == nil {
 		return
 	}
@@ -92,7 +96,7 @@ func Parse() {
 		k := strings.Trim(l[0:i], " \t\v\r\n")
 		v := strings.TrimLeft(l[i+1:], " \t\v\r\n")
 
-		er := flag.Set(k, v)
+		er := flagSet.Set(k, v)
 		if er != nil {
 			log.Fatal(er)
 		}

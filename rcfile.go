@@ -53,20 +53,21 @@ import (
 )
 
 func Parse() {
-	f := openRCFile()
+	rc := path.Base(os.Args[0]) + "rc"
+	f, filename := openFile(rc)
 	if f == nil {
 		return
 	}
 	defer f.Close()
 
 	r := bufio.NewReader(f)
-	i := 0
+	lineno := 0
 	for {
 		l, err := r.ReadString('\n')
 		if err != nil {
 			break
 		}
-		i++
+		lineno++
 		l = strings.Trim(l, " \t\v\r\n")
 
 		if len(l) == 0 {
@@ -85,7 +86,7 @@ func Parse() {
 		}
 
 		if c != '=' {
-			log.Fatalf("Syntax error in config file on line %d: Expected key=value pair; got: '%s'", i, l)
+			log.Fatalf("Syntax error in file '%s' on line %d: Expected key=value pair; got: '%s'", filename, lineno, l)
 		}
 
 		k := strings.Trim(l[0:i], " \t\v\r\n")
@@ -98,40 +99,41 @@ func Parse() {
 	}
 }
 
-func openRCFile() io.ReadCloser {
-	rc := path.Base(os.Args[0]) + "rc"
-
+func openFile(basename string) (io.ReadCloser, string) {
 	user, uexists := user.Current()
 	if uexists == nil {
-		rcf := path.Join(user.HomeDir, "."+rc)
+		rcf := path.Join(user.HomeDir, "."+basename)
 		r, err := os.Open(rcf)
 		if err == nil {
-			return r
+			return r, rcf
 		}
 	}
 
 	xdg_config := os.Getenv("XDG_CONFIG_DIR")
 	if xdg_config != "" {
-		r, err := os.Open(path.Join(xdg_config, rc))
+		xdg := path.Join(xdg_config, basename)
+		r, err := os.Open(xdg)
 		if err == nil {
-			return r
+			return r, xdg
 		}
 	}
 
 	if uexists == nil {
-		r, err := os.Open(path.Join(user.HomeDir, ".config", rc))
+		usr := path.Join(user.HomeDir, ".config", basename)
+		r, err := os.Open(usr)
 		if err == nil {
-			return r
+			return r, usr
 		}
 	}
 
 	appdata := os.Getenv("APPDATA")
 	if appdata != "" {
-		r, err := os.Open(path.Join(appdata, rc))
+		app := path.Join(appdata, basename)
+		r, err := os.Open(app)
 		if err == nil {
-			return r
+			return r, app
 		}
 	}
 
-	return nil
+	return nil, ""
 }
